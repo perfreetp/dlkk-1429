@@ -60,48 +60,67 @@ export const useAlarmStore = create<AlarmState>((set, get) => ({
   setTimeRange: (range) => set({ timeRange: range }),
   
   confirmAlarm: (id) => {
-    set((state) => ({
-      alarms: state.alarms.map((a) =>
+    set((state) => {
+      const updatedAlarms = state.alarms.map((a) =>
         a.id === id
           ? {
               ...a,
-              status: 'processing',
+              status: 'processing' as const,
               confirmTime: new Date().toISOString(),
             }
           : a
-      ),
-    }));
+      );
+      return {
+        alarms: updatedAlarms,
+        selectedAlarm: state.selectedAlarm?.id === id
+          ? updatedAlarms.find(a => a.id === id) || null
+          : state.selectedAlarm,
+      };
+    });
   },
   
   dispatchAlarm: (id, handler, handlerOrg) => {
-    set((state) => ({
-      alarms: state.alarms.map((a) =>
+    set((state) => {
+      const dispatchTime = new Date().toISOString();
+      const updatedAlarms = state.alarms.map((a) =>
         a.id === id
           ? {
               ...a,
-              status: 'dispatched',
-              dispatchTime: new Date().toISOString(),
+              status: 'dispatched' as const,
+              dispatchTime,
               handler,
               handlerOrg,
             }
           : a
-      ),
-    }));
+      );
+      return {
+        alarms: updatedAlarms,
+        selectedAlarm: state.selectedAlarm?.id === id
+          ? updatedAlarms.find(a => a.id === id) || null
+          : state.selectedAlarm,
+      };
+    });
   },
   
   closeAlarm: (id, result) => {
-    set((state) => ({
-      alarms: state.alarms.map((a) =>
+    set((state) => {
+      const updatedAlarms = state.alarms.map((a) =>
         a.id === id
           ? {
               ...a,
-              status: 'closed',
+              status: 'closed' as const,
               closeTime: new Date().toISOString(),
               handleResult: result,
             }
           : a
-      ),
-    }));
+      );
+      return {
+        alarms: updatedAlarms,
+        selectedAlarm: state.selectedAlarm?.id === id
+          ? updatedAlarms.find(a => a.id === id) || null
+          : state.selectedAlarm,
+      };
+    });
   },
   
   getFilteredAlarms: () => {

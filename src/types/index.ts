@@ -33,6 +33,7 @@ export interface Organization {
   address: string;
   deviceCount: number;
   onlineCount: number;
+  permissions: boolean[];
   children?: Organization[];
 }
 

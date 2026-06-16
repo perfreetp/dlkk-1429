@@ -121,6 +121,7 @@ export const useOrgStore = create<OrgState>((set, get) => ({
       address: data.address || '',
       deviceCount: 0,
       onlineCount: 0,
+      permissions: [true, true, true, false, false],
     };
     orgData.push(newOrg);
     const tree = rebuildOrgTree();

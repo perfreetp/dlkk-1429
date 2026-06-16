@@ -24,6 +24,7 @@ export default function CascadeRelation() {
   useEffect(() => {
     if (selectedOrg) {
       setFormData({ ...selectedOrg });
+      setPermissions(selectedOrg.permissions || [true, true, true, false, false]);
     }
   }, [selectedOrgId, orgList]);
 
@@ -35,6 +36,7 @@ export default function CascadeRelation() {
         contact: formData.contact || '',
         phone: formData.phone || '',
         address: formData.address || '',
+        permissions,
       });
       setEditMode(false);
     }

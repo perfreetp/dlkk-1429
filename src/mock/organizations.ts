@@ -13,6 +13,7 @@ export const organizations: Organization[] = [
     address: '市政中心A座',
     deviceCount: 128,
     onlineCount: 120,
+    permissions: [true, true, true, true, true],
   },
   {
     id: 'org-002',
@@ -26,6 +27,7 @@ export const organizations: Organization[] = [
     address: '东城区政府大楼',
     deviceCount: 256,
     onlineCount: 245,
+    permissions: [true, true, true, true, false],
   },
   {
     id: 'org-003',
@@ -39,6 +41,7 @@ export const organizations: Organization[] = [
     address: '西城区政务中心',
     deviceCount: 198,
     onlineCount: 189,
+    permissions: [true, true, false, true, false],
   },
   {
     id: 'org-004',
@@ -52,6 +55,7 @@ export const organizations: Organization[] = [
     address: '南城区行政中心',
     deviceCount: 312,
     onlineCount: 298,
+    permissions: [true, true, true, false, true],
   },
   {
     id: 'org-005',
@@ -65,6 +69,7 @@ export const organizations: Organization[] = [
     address: '北城区市民中心',
     deviceCount: 176,
     onlineCount: 168,
+    permissions: [true, false, true, true, false],
   },
   {
     id: 'org-006',
@@ -78,6 +83,7 @@ export const organizations: Organization[] = [
     address: '和平路88号',
     deviceCount: 64,
     onlineCount: 62,
+    permissions: [true, true, false, false, false],
   },
   {
     id: 'org-007',
@@ -91,6 +97,7 @@ export const organizations: Organization[] = [
     address: '解放路156号',
     deviceCount: 72,
     onlineCount: 68,
+    permissions: [true, false, true, false, false],
   },
   {
     id: 'org-008',
@@ -104,6 +111,7 @@ export const organizations: Organization[] = [
     address: '中山路234号',
     deviceCount: 56,
     onlineCount: 54,
+    permissions: [true, true, true, false, false],
   },
   {
     id: 'org-009',
@@ -117,6 +125,7 @@ export const organizations: Organization[] = [
     address: '人民广场东侧',
     deviceCount: 48,
     onlineCount: 46,
+    permissions: [true, false, false, true, false],
   },
   {
     id: 'org-010',
@@ -130,6 +139,7 @@ export const organizations: Organization[] = [
     address: '火车站广场',
     deviceCount: 88,
     onlineCount: 85,
+    permissions: [true, true, false, true, false],
   },
   {
     id: 'org-011',
@@ -143,6 +153,7 @@ export const organizations: Organization[] = [
     address: '经济开发区',
     deviceCount: 96,
     onlineCount: 92,
+    permissions: [true, true, true, true, true],
   },
   {
     id: 'org-012',
@@ -156,6 +167,7 @@ export const organizations: Organization[] = [
     address: '大学城园区',
     deviceCount: 52,
     onlineCount: 50,
+    permissions: [true, false, true, false, false],
   },
   {
     id: 'org-013',
@@ -169,6 +181,7 @@ export const organizations: Organization[] = [
     address: '市政中心',
     deviceCount: 32,
     onlineCount: 32,
+    permissions: [true, true, true, true, true],
   },
   {
     id: 'org-014',
@@ -182,6 +195,7 @@ export const organizations: Organization[] = [
     address: '公安大楼',
     deviceCount: 48,
     onlineCount: 47,
+    permissions: [true, true, true, true, true],
   },
   {
     id: 'org-015',
@@ -195,6 +209,7 @@ export const organizations: Organization[] = [
     address: '东城区市民中心',
     deviceCount: 24,
     onlineCount: 23,
+    permissions: [true, true, false, false, false],
   },
   {
     id: 'org-016',
@@ -208,6 +223,7 @@ export const organizations: Organization[] = [
     address: '中心医院院区',
     deviceCount: 56,
     onlineCount: 54,
+    permissions: [true, true, true, false, false],
   },
 ];
 

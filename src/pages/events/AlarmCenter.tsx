@@ -88,25 +88,20 @@ export default function AlarmCenter() {
 
   const handleConfirm = (alarmId: string) => {
     confirmAlarm(alarmId);
-    if (showDetail && selectedAlarm?.id === alarmId) {
-      setTimeout(() => {
-        const updated = alarms.find(a => a.id === alarmId);
-        if (updated) {
-          setSelectedAlarm(updated);
-        }
-      }, 0);
-    }
   };
 
-  const handleDispatch = (alarm: typeof alarms[0]) => {
-    setSelectedAlarm(alarm);
-    setDispatchForm({
-      orgId: 'org-002',
-      orgName: '东城区综治中心',
-      handler: '张伟（值班员）',
-      remark: '',
-    });
-    setDispatchModal(true);
+  const handleDispatch = (alarm?: typeof alarms[0]) => {
+    const targetAlarm = alarm || selectedAlarm;
+    if (targetAlarm) {
+      setSelectedAlarm(targetAlarm);
+      setDispatchForm({
+        orgId: 'org-002',
+        orgName: '东城区综治中心',
+        handler: '张伟（值班员）',
+        remark: '',
+      });
+      setDispatchModal(true);
+    }
   };
 
   const confirmDispatch = () => {
@@ -117,12 +112,6 @@ export default function AlarmCenter() {
         dispatchForm.orgName
       );
       setDispatchModal(false);
-      if (showDetail && selectedAlarm) {
-        const updated = alarms.find(a => a.id === selectedAlarm.id);
-        if (updated) {
-          setSelectedAlarm(updated);
-        }
-      }
     }
   };
 
@@ -136,14 +125,6 @@ export default function AlarmCenter() {
       closeAlarm(selectedAlarm.id, closeReason);
       setCloseModal(false);
       setCloseReason('');
-      if (showDetail) {
-        setTimeout(() => {
-          const updated = alarms.find(a => a.id === selectedAlarm.id);
-          if (updated) {
-            setSelectedAlarm(updated);
-          }
-        }, 0);
-      }
     }
   };
 
@@ -518,9 +499,7 @@ export default function AlarmCenter() {
               )}
               {selectedAlarm.status === 'processing' && (
                 <button
-                  onClick={() => {
-                    setDispatchModal(true);
-                  }}
+                  onClick={() => handleDispatch()}
                   className="flex-1 btn-success text-sm"
                 >
                   分派处理

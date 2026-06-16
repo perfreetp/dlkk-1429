@@ -109,8 +109,23 @@ export default function Conference() {
     fetchUsers();
   }, [setCurrentPageTitle, fetchUsers]);
 
+  const dedupParticipants = (participants: Participant[]): Participant[] => {
+    const userMap = new Map<string, Participant>();
+    participants.forEach(p => {
+      if (!userMap.has(p.userId)) {
+        userMap.set(p.userId, p);
+      }
+    });
+    return Array.from(userMap.values());
+  };
+
   const handleJoinRoom = (room: ConferenceRoom) => {
-    setActiveRoom(room);
+    const dedupedRoom = {
+      ...room,
+      participants: dedupParticipants(room.participants),
+      participantCount: dedupParticipants(room.participants).length,
+    };
+    setActiveRoom(dedupedRoom);
   };
 
   const handleLeaveRoom = () => {
@@ -145,23 +160,31 @@ export default function Conference() {
     if (!createForm.name || createForm.selectedUsers.length === 0) return;
 
     const currentUser = users[0];
-    const selectedParticipants: Participant[] = [
-      {
-        userId: currentUser.id,
-        userName: currentUser.realName,
-        orgName: currentUser.orgName,
-        role: '主持人',
-      },
-      ...createForm.selectedUsers.map(userId => {
+    const userMap = new Map<string, Participant>();
+    
+    const host: Participant = {
+      userId: currentUser.id,
+      userName: currentUser.realName,
+      orgName: currentUser.orgName,
+      role: '主持人',
+    };
+    userMap.set(host.userId, host);
+    
+    createForm.selectedUsers.forEach(userId => {
+      if (userId !== currentUser.id && !userMap.has(userId)) {
         const user = users.find(u => u.id === userId);
-        return {
-          userId,
-          userName: user?.realName || '',
-          orgName: user?.orgName || '',
-          role: '参会人',
-        };
-      }),
-    ];
+        if (user) {
+          userMap.set(userId, {
+            userId,
+            userName: user.realName,
+            orgName: user.orgName,
+            role: '参会人',
+          });
+        }
+      }
+    });
+
+    const selectedParticipants = Array.from(userMap.values());
 
     const newRoom: ConferenceRoom = {
       id: `room-${Date.now()}`,
@@ -182,13 +205,21 @@ export default function Conference() {
     setVideoOffUsers(new Set());
   };
 
+  const currentUserId = users[0]?.id || '';
+
   const toggleUserSelection = (userId: string) => {
+    if (userId === currentUserId) return;
     setCreateForm(prev => ({
       ...prev,
       selectedUsers: prev.selectedUsers.includes(userId)
         ? prev.selectedUsers.filter(id => id !== userId)
         : [...prev.selectedUsers, userId],
     }));
+  };
+
+  const getUniqueSelectedCount = () => {
+    const uniqueIds = new Set(createForm.selectedUsers.filter(id => id !== currentUserId));
+    return uniqueIds.size;
   };
 
   return (
@@ -213,57 +244,65 @@ export default function Conference() {
             <div className="col-span-2 glass-card p-5">
               <h3 className="text-base font-medium text-white mb-4">进行中的会议</h3>
               <div className="space-y-3">
-                {rooms.filter(r => r.status === 'ongoing').map((room) => (
-                  <div
-                    key={room.id}
-                    className="p-4 glass-card-hover cursor-pointer"
-                    onClick={() => handleJoinRoom(room)}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-primary-500/20 rounded-xl">
-                          <Video size={24} className="text-primary-400" />
+                {rooms.filter(r => r.status === 'ongoing').map((room) => {
+                  const dedupedParticipants = dedupParticipants(room.participants);
+                  const displayRoom = {
+                    ...room,
+                    participants: dedupedParticipants,
+                    participantCount: dedupedParticipants.length,
+                  };
+                  return (
+                    <div
+                      key={room.id}
+                      className="p-4 glass-card-hover cursor-pointer"
+                      onClick={() => handleJoinRoom(room)}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-primary-500/20 rounded-xl">
+                            <Video size={24} className="text-primary-400" />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-medium text-white">{displayRoom.name}</h4>
+                            <p className="text-sm text-gray-500">
+                              主持人: {displayRoom.creator} · {displayRoom.createTime}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-base font-medium text-white">{room.name}</h4>
-                          <p className="text-sm text-gray-500">
-                            主持人: {room.creator} · {room.createTime}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-danger-500/20 text-danger-400 text-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-danger-500 animate-pulse" />
+                            进行中
+                          </span>
+                          <button className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded">
+                            <MoreHorizontal size={16} />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1 px-2 py-1 rounded-md bg-danger-500/20 text-danger-400 text-xs">
-                          <span className="w-1.5 h-1.5 rounded-full bg-danger-500 animate-pulse" />
-                          进行中
-                        </span>
-                        <button className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded">
-                          <MoreHorizontal size={16} />
+                      <div className="flex items-center justify-between">
+                        <div className="flex -space-x-2">
+                          {displayRoom.participants?.slice(0, 5).map((p, i) => (
+                            <div
+                              key={p.userId}
+                              className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 border-2 border-dark-600 flex items-center justify-center text-white text-xs font-medium"
+                              style={{ zIndex: 5 - i }}
+                            >
+                              {p.userName.charAt(0)}
+                            </div>
+                          ))}
+                          {displayRoom.participantCount > 5 && (
+                            <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-dark-600 flex items-center justify-center text-gray-400 text-xs">
+                              +{displayRoom.participantCount - 5}
+                            </div>
+                          )}
+                        </div>
+                        <button className="btn-success text-sm px-4 py-1.5">
+                          加入会议
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex -space-x-2">
-                        {room.participants?.slice(0, 5).map((p, i) => (
-                          <div
-                            key={i}
-                            className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 border-2 border-dark-600 flex items-center justify-center text-white text-xs font-medium"
-                            style={{ zIndex: 5 - i }}
-                          >
-                            {p.userName.charAt(0)}
-                          </div>
-                        ))}
-                        {room.participantCount > 5 && (
-                          <div className="w-8 h-8 rounded-full bg-white/10 border-2 border-dark-600 flex items-center justify-center text-gray-400 text-xs">
-                            +{room.participantCount - 5}
-                          </div>
-                        )}
-                      </div>
-                      <button className="btn-success text-sm px-4 py-1.5">
-                        加入会议
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {rooms.filter(r => r.status === 'ongoing').length === 0 && (
                   <div className="py-12 text-center">
                     <Video size={48} className="mx-auto text-gray-600 mb-3" />
@@ -533,42 +572,50 @@ export default function Conference() {
 
               <div>
                 <label className="text-sm text-gray-400 mb-1.5 block">
-                  邀请参会人 ({createForm.selectedUsers.length}人已选)
+                  邀请参会人 ({getUniqueSelectedCount()}人已选，含主持人共 {getUniqueSelectedCount() + 1}人)
                 </label>
                 <div className="max-h-48 overflow-y-auto space-y-1 border border-white/10 rounded-lg p-2">
-                  {users.slice(0, 8).map((user) => (
-                    <label
-                      key={user.id}
-                      className="flex items-center gap-2 p-2 rounded hover:bg-white/5 cursor-pointer"
-                    >
-                      <div className="relative">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          checked={createForm.selectedUsers.includes(user.id)}
-                          onChange={() => toggleUserSelection(user.id)}
-                        />
-                        <div
-                          className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${
-                            createForm.selectedUsers.includes(user.id)
-                              ? 'bg-primary-500 border-primary-500'
-                              : 'border-gray-600 bg-dark-700'
-                          }`}
-                        >
-                          {createForm.selectedUsers.includes(user.id) && (
-                            <Check size={12} className="text-white" />
-                          )}
+                  {users.slice(0, 8).map((user) => {
+                    const isHost = user.id === currentUserId;
+                    const isSelected = createForm.selectedUsers.includes(user.id) || isHost;
+                    return (
+                      <label
+                        key={user.id}
+                        className={`flex items-center gap-2 p-2 rounded transition-colors ${isHost ? 'bg-primary-500/10' : 'hover:bg-white/5 cursor-pointer'}`}
+                      >
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            className="sr-only peer"
+                            checked={isSelected}
+                            disabled={isHost}
+                            onChange={() => toggleUserSelection(user.id)}
+                          />
+                          <div
+                            className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${
+                              isSelected
+                                ? 'bg-primary-500 border-primary-500'
+                                : 'border-gray-600 bg-dark-700'
+                            } ${isHost ? 'opacity-60' : ''}`}
+                          >
+                            {isSelected && (
+                              <Check size={12} className="text-white" />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-1">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs">
-                          {user.realName.charAt(0)}
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-xs">
+                            {user.realName.charAt(0)}
+                          </div>
+                          <span className={`text-sm ${isHost ? 'text-primary-400' : 'text-gray-300'}`}>
+                            {user.realName}
+                            {isHost && <span className="ml-1 text-xs">(主持人)</span>}
+                          </span>
+                          <span className="text-xs text-gray-500">- {user.orgName}</span>
                         </div>
-                        <span className="text-sm text-gray-300">{user.realName}</span>
-                        <span className="text-xs text-gray-500">- {user.orgName}</span>
-                      </div>
-                    </label>
-                  ))}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -582,7 +629,7 @@ export default function Conference() {
               </button>
               <button
                 onClick={handleCreateRoom}
-                disabled={!createForm.name || createForm.selectedUsers.length === 0}
+                disabled={!createForm.name || getUniqueSelectedCount() === 0}
                 className="flex-1 btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 创建并开始
