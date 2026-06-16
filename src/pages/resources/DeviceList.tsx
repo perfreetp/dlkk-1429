@@ -9,9 +9,11 @@ import {
   Download,
   Plus,
   RefreshCw,
+  X,
 } from 'lucide-react';
 import { useDeviceStore, useOrgStore, useUiStore } from '@/store';
 import OrgTree from '@/components/OrgTree';
+import type { Organization } from '@/types';
 
 export default function DeviceList() {
   const {
@@ -28,7 +30,7 @@ export default function DeviceList() {
     getDeviceCount,
     setSelectedDevice,
   } = useDeviceStore();
-  const { fetchOrgTree, orgList } = useOrgStore();
+  const { fetchOrgTree, orgList, selectedOrgId, setSelectedOrg } = useOrgStore();
   const { setCurrentPageTitle } = useUiStore();
   const [currentPage, setCurrentPage] = useState(1);
   const [showOrgPanel, setShowOrgPanel] = useState(true);
@@ -40,6 +42,15 @@ export default function DeviceList() {
     fetchOrgTree();
   }, [setCurrentPageTitle, fetchDevices, fetchOrgTree]);
 
+  useEffect(() => {
+    setOrgFilter(selectedOrgId);
+    setCurrentPage(1);
+  }, [selectedOrgId, setOrgFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchKeyword, statusFilter, orgFilter]);
+
   const filteredDevices = getFilteredDevices();
   const totalPages = Math.ceil(filteredDevices.length / pageSize);
   const currentDevices = filteredDevices.slice(
@@ -47,6 +58,18 @@ export default function DeviceList() {
     currentPage * pageSize
   );
   const stats = getDeviceCount();
+
+  const handleOrgSelect = (org: Organization) => {
+    if (org.id === selectedOrgId) {
+      setSelectedOrg('');
+    }
+  };
+
+  const handleClearFilter = () => {
+    setSearchKeyword('');
+    setStatusFilter('all');
+    setSelectedOrg('');
+  };
 
   const statusOptions = [
     { value: 'all', label: '全部状态' },
@@ -101,7 +124,7 @@ export default function DeviceList() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-2">
-              <OrgTree />
+              <OrgTree onSelect={handleOrgSelect} showDeviceCount />
             </div>
           </div>
         )}
@@ -138,8 +161,22 @@ export default function DeviceList() {
                   </option>
                 ))}
               </select>
+              {(searchKeyword || statusFilter !== 'all' || orgFilter) && (
+                <button
+                  onClick={handleClearFilter}
+                  className="h-9 px-3 bg-white/5 text-gray-400 rounded-lg hover:bg-white/10 hover:text-gray-200 transition-colors flex items-center gap-1 text-sm"
+                >
+                  <X size={14} />
+                  清空筛选
+                </button>
+              )}
             </div>
             <div className="flex items-center gap-2">
+              {orgFilter && (
+                <span className="text-sm text-gray-400">
+                  当前筛选: <span className="text-primary-400">{orgList.find(o => o.id === orgFilter)?.name}</span>
+                </span>
+              )}
               <button
                 onClick={() => fetchDevices()}
                 className="p-2 bg-white/10 text-gray-300 rounded-lg hover:bg-white/20 transition-colors"

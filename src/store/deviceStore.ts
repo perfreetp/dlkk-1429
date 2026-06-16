@@ -1,6 +1,16 @@
 import { create } from 'zustand';
 import type { Device } from '@/types';
 import { devices as mockDevices, getDeviceById, getDevicesByOrg, searchDevices } from '@/mock';
+import { organizations } from '@/mock';
+
+const getChildOrgIds = (parentId: string): string[] => {
+  const result: string[] = [parentId];
+  const children = organizations.filter(o => o.parentId === parentId);
+  children.forEach(child => {
+    result.push(...getChildOrgIds(child.id));
+  });
+  return result;
+};
 
 interface DeviceState {
   devices: Device[];
@@ -63,7 +73,8 @@ export const useDeviceStore = create<DeviceState>((set, get) => ({
     }
     
     if (orgFilter) {
-      filtered = filtered.filter((d) => d.orgId === orgFilter);
+      const orgIds = getChildOrgIds(orgFilter);
+      filtered = filtered.filter((d) => orgIds.includes(d.orgId));
     }
     
     return filtered;

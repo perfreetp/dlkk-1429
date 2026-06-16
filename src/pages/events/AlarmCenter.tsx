@@ -51,6 +51,7 @@ export default function AlarmCenter() {
     getFilteredAlarms,
     getAlarmStats,
     confirmAlarm,
+    dispatchAlarm,
     closeAlarm,
   } = useAlarmStore();
   const { setCurrentPageTitle } = useUiStore();
@@ -59,6 +60,12 @@ export default function AlarmCenter() {
   const [dispatchModal, setDispatchModal] = useState(false);
   const [closeModal, setCloseModal] = useState(false);
   const [closeReason, setCloseReason] = useState('');
+  const [dispatchForm, setDispatchForm] = useState({
+    orgId: '',
+    orgName: '',
+    handler: '',
+    remark: '',
+  });
   const pageSize = 10;
 
   useEffect(() => {
@@ -81,11 +88,42 @@ export default function AlarmCenter() {
 
   const handleConfirm = (alarmId: string) => {
     confirmAlarm(alarmId);
+    if (showDetail && selectedAlarm?.id === alarmId) {
+      setTimeout(() => {
+        const updated = alarms.find(a => a.id === alarmId);
+        if (updated) {
+          setSelectedAlarm(updated);
+        }
+      }, 0);
+    }
   };
 
   const handleDispatch = (alarm: typeof alarms[0]) => {
     setSelectedAlarm(alarm);
+    setDispatchForm({
+      orgId: 'org-002',
+      orgName: '东城区综治中心',
+      handler: '张伟（值班员）',
+      remark: '',
+    });
     setDispatchModal(true);
+  };
+
+  const confirmDispatch = () => {
+    if (selectedAlarm && dispatchForm.orgId && dispatchForm.handler) {
+      dispatchAlarm(
+        selectedAlarm.id,
+        dispatchForm.handler,
+        dispatchForm.orgName
+      );
+      setDispatchModal(false);
+      if (showDetail && selectedAlarm) {
+        const updated = alarms.find(a => a.id === selectedAlarm.id);
+        if (updated) {
+          setSelectedAlarm(updated);
+        }
+      }
+    }
   };
 
   const handleClose = (alarm: typeof alarms[0]) => {
@@ -98,6 +136,14 @@ export default function AlarmCenter() {
       closeAlarm(selectedAlarm.id, closeReason);
       setCloseModal(false);
       setCloseReason('');
+      if (showDetail) {
+        setTimeout(() => {
+          const updated = alarms.find(a => a.id === selectedAlarm.id);
+          if (updated) {
+            setSelectedAlarm(updated);
+          }
+        }, 0);
+      }
     }
   };
 
@@ -380,16 +426,34 @@ export default function AlarmCenter() {
                   </div>
                 </div>
 
-                {selectedAlarm.handler && (
-                  <div className="flex items-start gap-3">
-                    <User size={16} className="text-gray-500 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-500">处理人</p>
-                      <p className="text-sm text-gray-300 mt-0.5">
-                        {selectedAlarm.handler} / {selectedAlarm.handlerOrg}
-                      </p>
+                {(selectedAlarm.status === 'dispatched' || selectedAlarm.status === 'closed') && selectedAlarm.handler && (
+                  <>
+                    <div className="flex items-start gap-3">
+                      <Building2 size={16} className="text-gray-500 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-500">分派单位</p>
+                        <p className="text-sm text-gray-300 mt-0.5">{selectedAlarm.handlerOrg}</p>
+                      </div>
                     </div>
-                  </div>
+                    <div className="flex items-start gap-3">
+                      <User size={16} className="text-gray-500 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-500">处理人</p>
+                        <p className="text-sm text-gray-300 mt-0.5">{selectedAlarm.handler}</p>
+                      </div>
+                    </div>
+                    {selectedAlarm.dispatchTime && (
+                      <div className="flex items-start gap-3">
+                        <Clock size={16} className="text-gray-500 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-gray-500">分派时间</p>
+                          <p className="text-sm text-gray-300 mt-0.5">
+                            {new Date(selectedAlarm.dispatchTime).toLocaleString('zh-CN')}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {selectedAlarm.handleResult && (
@@ -484,19 +548,40 @@ export default function AlarmCenter() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm text-gray-400 mb-1.5 block">分派给</label>
-                <select className="input-field text-sm">
-                  <option>东城区综治中心</option>
-                  <option>西城区综治中心</option>
-                  <option>南城区综治中心</option>
-                  <option>北城区综治中心</option>
+                <select
+                  className="input-field text-sm"
+                  value={dispatchForm.orgId}
+                  onChange={(e) => {
+                    const options = [
+                      { id: 'org-002', name: '东城区综治中心' },
+                      { id: 'org-003', name: '西城区综治中心' },
+                      { id: 'org-004', name: '南城区综治中心' },
+                      { id: 'org-005', name: '北城区综治中心' },
+                    ];
+                    const org = options.find(o => o.id === e.target.value);
+                    setDispatchForm({
+                      ...dispatchForm,
+                      orgId: e.target.value,
+                      orgName: org?.name || '',
+                    });
+                  }}
+                >
+                  <option value="org-002">东城区综治中心</option>
+                  <option value="org-003">西城区综治中心</option>
+                  <option value="org-004">南城区综治中心</option>
+                  <option value="org-005">北城区综治中心</option>
                 </select>
               </div>
               <div>
                 <label className="text-sm text-gray-400 mb-1.5 block">处理人</label>
-                <select className="input-field text-sm">
-                  <option>张伟（值班员）</option>
-                  <option>李娜（值班员）</option>
-                  <option>王强（值班员）</option>
+                <select
+                  className="input-field text-sm"
+                  value={dispatchForm.handler}
+                  onChange={(e) => setDispatchForm({ ...dispatchForm, handler: e.target.value })}
+                >
+                  <option value="张伟（值班员）">张伟（值班员）</option>
+                  <option value="李娜（值班员）">李娜（值班员）</option>
+                  <option value="王强（值班员）">王强（值班员）</option>
                 </select>
               </div>
               <div>
@@ -504,6 +589,8 @@ export default function AlarmCenter() {
                 <textarea
                   className="input-field text-sm h-20 resize-none"
                   placeholder="请输入备注信息..."
+                  value={dispatchForm.remark}
+                  onChange={(e) => setDispatchForm({ ...dispatchForm, remark: e.target.value })}
                 />
               </div>
             </div>
@@ -515,7 +602,7 @@ export default function AlarmCenter() {
                 取消
               </button>
               <button
-                onClick={() => setDispatchModal(false)}
+                onClick={confirmDispatch}
                 className="flex-1 btn-primary text-sm"
               >
                 确认分派
